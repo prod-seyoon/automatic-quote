@@ -4,6 +4,7 @@ import InquiryList from './components/InquiryList';
 import PaymentList from './components/PaymentList';
 import PartnerList from './components/PartnerList';
 import Settings from './components/Settings';
+import ClientList from './components/ClientList';
 
 function App() {
   const [activeTab, setActiveTab] = useState('inquiries');
@@ -28,6 +29,14 @@ function App() {
       <div className="flex flex-1 overflow-hidden">
         <nav className="w-64 bg-white border-r border-slate-200 p-4 shrink-0">
           <ul className="space-y-2">
+            <li>
+              <button
+                onClick={() => setActiveTab('clients')}
+                className={`w-full text-left px-4 py-3 rounded-lg font-medium transition ${activeTab === 'clients' ? 'bg-blue-50 text-primary' : 'text-slate-600 hover:bg-slate-50'}`}
+              >
+                🏢 기업(고객사) 관리
+              </button>
+            </li>
             <li>
               <button
                 onClick={() => setActiveTab('inquiries')}
@@ -72,6 +81,11 @@ function App() {
         </nav>
 
         <main className="flex-1 p-8 overflow-y-auto w-full">
+          {activeTab === 'clients' && (
+            <div className="h-full">
+              <ClientList />
+            </div>
+          )}
           {activeTab === 'inquiries' && (
             <div className="h-full">
               <h2 className="text-xl font-bold mb-6 text-slate-800">문의 관리</h2>

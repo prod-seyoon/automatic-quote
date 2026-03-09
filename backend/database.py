@@ -38,12 +38,16 @@ class Inquiry(Base):
     __tablename__ = "inquiries"
     id = Column(Integer, primary_key=True, index=True)
     client_id = Column(Integer, ForeignKey("clients.id"))
+    customer_name = Column(String, nullable=True)
+    email = Column(String, nullable=True)
+    phone = Column(String, nullable=True)
     receiver_name = Column(String) # 접수자
     service_type = Column(String) # 3D프린팅, 설계, CNC 등
     item_name = Column(String)
     consultation_details = Column(Text)
     status = Column(String, default="접수") # 접수, 견적완료, 발주확정, 제작중, 완료
     created_at = Column(DateTime, default=datetime.utcnow)
+    replied_at = Column(DateTime, nullable=True)
     
     client = relationship("Client", back_populates="inquiries")
     estimates = relationship("Estimate", back_populates="inquiry")

@@ -27,8 +27,18 @@ class ClientCreate(BaseModel):
     is_new: bool = True
     business_registration_number: Optional[str] = None
 
+class ClientUpdate(BaseModel):
+    company_name: Optional[str] = None
+    customer_name: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    business_registration_number: Optional[str] = None
+
 class InquiryCreate(BaseModel):
     client_id: int
+    customer_name: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
     receiver_name: str
     service_type: str
     item_name: str
@@ -41,12 +51,31 @@ class InquiryUpdate(BaseModel):
     consultation_details: Optional[str] = None
     status: Optional[str] = None
     receiver_name: Optional[str] = None
+    customer_name: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    created_at: Optional[datetime] = None
+    replied_at: Optional[datetime] = None
 
 # --- API Endpoints ---
 @router.post("/clients")
 def create_client(client: ClientCreate, db: Session = Depends(get_db)):
     db_client = Client(**client.dict())
     db.add(db_client)
+    db.commit()
+    db.refresh(db_client)
+    return db_client
+
+@router.put("/clients/{client_id}")
+def update_client(client_id: int, client_update: ClientUpdate, db: Session = Depends(get_db)):
+    db_client = db.query(Client).filter(Client.id == client_id).first()
+    if not db_client:
+        raise HTTPException(status_code=404, detail="Client not found")
+    
+    update_data = client_update.dict(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(db_client, key, value)
+        
     db.commit()
     db.refresh(db_client)
     return db_client
@@ -143,9 +172,9 @@ def read_inquiries(
             "id": inq.id,
             "client_id": inq.client_id,
             "client_name": inq.client.company_name if inq.client else None,
-            "customer_name": inq.client.customer_name if inq.client else None,
-            "email": inq.client.email if inq.client else None,
-            "phone": inq.client.phone if inq.client else None,
+            "customer_name": inq.customer_name or (inq.client.customer_name if inq.client else None),
+            "email": inq.email or (inq.client.email if inq.client else None),
+            "phone": inq.phone or (inq.client.phone if inq.client else None),
             "client_type": client_type,
             "receiver_name": inq.receiver_name,
             "service_type": inq.service_type,
@@ -153,6 +182,7 @@ def read_inquiries(
             "consultation_details": inq.consultation_details,
             "status": inq.status,
             "created_at": inq.created_at,
+            "replied_at": inq.replied_at,
             "latest_estimate_id": latest_est.id if latest_est else None,
             "calculated_amount": latest_est.calculated_amount if latest_est else None
         })
