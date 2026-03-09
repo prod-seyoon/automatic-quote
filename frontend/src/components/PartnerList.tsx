@@ -36,7 +36,7 @@ export default function PartnerList() {
     const fetchData = async () => {
         setLoading(true);
         try {
-            const oRes = await axios.get('http://127.0.0.1:8000/api/v1/outsourcings');
+            const oRes = await axios.get('https://automatic-quote.onrender.com/api/v1/outsourcings');
             setOutsourcings(oRes.data);
         } catch (err) {
             console.error(err);
@@ -55,7 +55,7 @@ export default function PartnerList() {
 
     const handleSaveEdit = async (id: number) => {
         try {
-            await axios.put(`http://127.0.0.1:8000/api/v1/outsourcings/${id}`, {
+            await axios.put(`https://automatic-quote.onrender.com/api/v1/outsourcings/${id}`, {
                 is_paid_to_partner: editForm.is_paid_to_partner,
                 tracking_number: editForm.tracking_number
             });

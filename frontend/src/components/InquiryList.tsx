@@ -42,7 +42,7 @@ export default function InquiryList({ onLinkEstimate }: InquiryListProps) {
 
     const fetchInquiries = async () => {
         try {
-            const res = await axios.get('http://127.0.0.1:8000/api/v1/inquiries');
+            const res = await axios.get('https://automatic-quote.onrender.com/api/v1/inquiries');
             // Sort by latest
             setInquiries(res.data.sort((a: Inquiry, b: Inquiry) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()));
         } catch (err) {
@@ -55,7 +55,7 @@ export default function InquiryList({ onLinkEstimate }: InquiryListProps) {
     const handleCreateOrder = async (estimateId: number) => {
         if (!window.confirm("이 문의의 견적을 발주로 전환하시겠습니까? (임시 카드결제 생성됨)")) return;
         try {
-            await axios.post('http://127.0.0.1:8000/api/v1/orders', {
+            await axios.post('https://automatic-quote.onrender.com/api/v1/orders', {
                 estimate_id: estimateId,
                 payment_method: '카드'
             });
@@ -71,7 +71,7 @@ export default function InquiryList({ onLinkEstimate }: InquiryListProps) {
         e.preventDefault();
         try {
             // 1. Create Client
-            const clientRes = await axios.post('http://127.0.0.1:8000/api/v1/clients', {
+            const clientRes = await axios.post('https://automatic-quote.onrender.com/api/v1/clients', {
                 company_name: formData.company_name,
                 customer_name: formData.customer_name,
                 email: formData.email,
@@ -81,7 +81,7 @@ export default function InquiryList({ onLinkEstimate }: InquiryListProps) {
             const clientId = clientRes.data.id;
 
             // 2. Create Inquiry
-            await axios.post('http://127.0.0.1:8000/api/v1/inquiries', {
+            await axios.post('https://automatic-quote.onrender.com/api/v1/inquiries', {
                 client_id: clientId,
                 receiver_name: '관리자', // Default logged-in user theoretically
                 service_type: formData.service_type,

@@ -36,7 +36,7 @@ export default function PaymentList() {
     const fetchOrders = async () => {
         setLoading(true);
         try {
-            const res = await axios.get('http://127.0.0.1:8000/api/v1/orders');
+            const res = await axios.get('https://automatic-quote.onrender.com/api/v1/orders');
             setOrders(res.data);
         } catch (err) {
             console.error("Failed to fetch orders:", err);
@@ -61,7 +61,7 @@ export default function PaymentList() {
 
     const handleSaveEdit = async (orderId: number) => {
         try {
-            await axios.put(`http://127.0.0.1:8000/api/v1/orders/${orderId}`, {
+            await axios.put(`https://automatic-quote.onrender.com/api/v1/orders/${orderId}`, {
                 payment_status: editForm.payment_status,
                 tax_invoice_number: editForm.tax_invoice_number,
                 is_deposit_confirmed: editForm.is_deposit_confirmed

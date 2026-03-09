@@ -28,7 +28,7 @@ export default function Settings() {
 
     const fetchConfig = async () => {
         try {
-            const res = await axios.get('http://127.0.0.1:8000/api/v1/settings/quoting');
+            const res = await axios.get('https://automatic-quote.onrender.com/api/v1/settings/quoting');
             setConfig(res.data);
         } catch (err) {
             console.error("Failed to fetch settings:", err);
@@ -42,7 +42,7 @@ export default function Settings() {
         if (!config) return;
         setSaving(true);
         try {
-            await axios.put('http://127.0.0.1:8000/api/v1/settings/quoting', { config });
+            await axios.put('https://automatic-quote.onrender.com/api/v1/settings/quoting', { config });
             alert("설정이 성공적으로 저장되었습니다.");
         } catch (err) {
             console.error("Failed to save settings:", err);

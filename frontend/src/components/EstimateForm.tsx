@@ -46,7 +46,7 @@ export default function EstimateForm({ existingInquiryId = null }: EstimateFormP
 
     useEffect(() => {
         // Fetch quoting config
-        axios.get('http://127.0.0.1:8000/api/v1/settings/quoting')
+        axios.get('https://automatic-quote.onrender.com/api/v1/settings/quoting')
             .then(res => {
                 setConfig(res.data);
                 if (res.data && res.data['SLA'] && res.data['SLA'].materials.length > 0) {
@@ -141,7 +141,7 @@ export default function EstimateForm({ existingInquiryId = null }: EstimateFormP
                 formData.append('is_hollow', isHollow ? 'true' : 'false');
                 formData.append('shell_thickness', shellThickness.toString());
 
-                const res = await axios.post('http://127.0.0.1:8000/api/v1/estimate/calculate', formData, {
+                const res = await axios.post('https://automatic-quote.onrender.com/api/v1/estimate/calculate', formData, {
                     headers: { 'Content-Type': 'multipart/form-data' }
                 });
 
@@ -173,7 +173,7 @@ export default function EstimateForm({ existingInquiryId = null }: EstimateFormP
 
             if (!inquiryId) {
                 // 1. Create or Find Client
-                const clientRes = await axios.post('http://127.0.0.1:8000/api/v1/clients', {
+                const clientRes = await axios.post('https://automatic-quote.onrender.com/api/v1/clients', {
                     company_name: saveFormData.company_name,
                     customer_name: saveFormData.customer_name,
                     email: saveFormData.email,
@@ -183,7 +183,7 @@ export default function EstimateForm({ existingInquiryId = null }: EstimateFormP
                 const clientId = clientRes.data.id;
 
                 // 2. Create Inquiry
-                const inqRes = await axios.post('http://127.0.0.1:8000/api/v1/inquiries', {
+                const inqRes = await axios.post('https://automatic-quote.onrender.com/api/v1/inquiries', {
                     client_id: clientId,
                     receiver_name: '관리자',
                     service_type: '3D프린팅',
@@ -195,7 +195,7 @@ export default function EstimateForm({ existingInquiryId = null }: EstimateFormP
 
             // 3. Create Estimate
             const filePaths = files.map(f => f.name);
-            const estRes = await axios.post('http://127.0.0.1:8000/api/v1/estimates', {
+            const estRes = await axios.post('https://automatic-quote.onrender.com/api/v1/estimates', {
                 inquiry_id: inquiryId,
                 file_paths: filePaths,
                 production_method: method,
@@ -387,7 +387,7 @@ export default function EstimateForm({ existingInquiryId = null }: EstimateFormP
                             )}
                             {savedEstimateId && (
                                 <a
-                                    href={`http://127.0.0.1:8000/api/v1/estimates/${savedEstimateId}/pdf`}
+                                    href={`https://automatic-quote.onrender.com/api/v1/estimates/${savedEstimateId}/pdf`}
                                     target="_blank"
                                     rel="noreferrer"
                                     className="bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 text-emerald-700 font-medium py-3 px-6 rounded-xl transition flex items-center gap-2"
