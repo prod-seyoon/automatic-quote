@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Mail, Search, Clock, CheckCircle2, Plus, X, CreditCard, Calculator, Edit2, Reply, Play } from 'lucide-react';
+import { Mail, Search, Clock, CheckCircle2, Plus, X, CreditCard, Calculator, Edit2, Reply, Play, Building2, UserCircle } from 'lucide-react';
 
 interface Inquiry {
     id: number;
@@ -27,6 +27,15 @@ interface Client {
     customer_name: string;
     email: string;
     phone: string;
+    contacts?: { name: string, phone: string, email: string, notes?: string }[];
+}
+
+interface ClientOption {
+    clientId: number;
+    companyName: string;
+    contactName: string;
+    phone: string;
+    email: string;
 }
 
 interface InquiryListProps {
@@ -54,7 +63,7 @@ export default function InquiryList({ onLinkEstimate }: InquiryListProps) {
     const [endDate, setEndDate] = useState('');
 
     // Auto-complete clients
-    const [clients, setClients] = useState<Client[]>([]);
+    const [clientOptions, setClientOptions] = useState<ClientOption[]>([]);
     const [showClientDropdown, setShowClientDropdown] = useState(false);
 
     // Form State for Create/Edit
@@ -97,27 +106,49 @@ export default function InquiryList({ onLinkEstimate }: InquiryListProps) {
     const searchClients = async (term: string) => {
         setFormData({ ...formData, company_name: term, client_id: null }); // allow typing
         if (!term) {
-            setClients([]);
+            setClientOptions([]);
             setShowClientDropdown(false);
             return;
         }
         try {
             const res = await axios.get(`https://automatic-quote.onrender.com/api/v1/clients?search_term=${term}`);
-            setClients(res.data);
+            let options: ClientOption[] = [];
+            res.data.forEach((c: Client) => {
+                if (c.contacts && c.contacts.length > 0) {
+                    c.contacts.forEach(contact => {
+                        options.push({
+                            clientId: c.id,
+                            companyName: c.company_name,
+                            contactName: contact.name,
+                            phone: contact.phone,
+                            email: contact.email
+                        });
+                    });
+                } else {
+                    options.push({
+                        clientId: c.id,
+                        companyName: c.company_name,
+                        contactName: c.customer_name,
+                        phone: c.phone,
+                        email: c.email
+                    });
+                }
+            });
+            setClientOptions(options);
             setShowClientDropdown(true);
         } catch (e) {
             console.error(e);
         }
     };
 
-    const selectClient = (client: Client) => {
+    const selectClient = (opt: ClientOption) => {
         setFormData({
             ...formData,
-            company_name: client.company_name,
-            customer_name: client.customer_name,
-            email: client.email,
-            phone: client.phone,
-            client_id: client.id
+            company_name: opt.companyName,
+            customer_name: opt.contactName,
+            email: opt.email,
+            phone: opt.phone,
+            client_id: opt.clientId
         });
         setShowClientDropdown(false);
     };
@@ -391,12 +422,14 @@ export default function InquiryList({ onLinkEstimate }: InquiryListProps) {
                                             <label className="block text-xs font-medium text-slate-500 mb-1">고객사 / 단체명</label>
                                             <input type="text" required value={formData.company_name} onChange={e => searchClients(e.target.value)} onFocus={() => formData.company_name && setShowClientDropdown(true)} onBlur={() => setTimeout(() => setShowClientDropdown(false), 200)} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" placeholder="업체명 검색 또는 직접입력" />
                                             {/* Autocomplete Dropdown */}
-                                            {showClientDropdown && clients.length > 0 && (
+                                            {showClientDropdown && clientOptions.length > 0 && (
                                                 <div className="absolute top-16 left-0 right-0 bg-white border border-slate-200 rounded-lg shadow-lg z-10 max-h-48 overflow-auto">
-                                                    {clients.map(c => (
-                                                        <div key={c.id} onMouseDown={(e) => { e.preventDefault(); selectClient(c); }} className="px-3 py-2 hover:bg-slate-50 cursor-pointer border-b border-slate-50 last:border-0">
-                                                            <div className="font-medium text-sm text-slate-800">{c.company_name}</div>
-                                                            <div className="text-xs text-slate-500">{c.customer_name} · {c.phone}</div>
+                                                    {clientOptions.map((opt, idx) => (
+                                                        <div key={`${opt.clientId}-${idx}`} onMouseDown={(e) => { e.preventDefault(); selectClient(opt); }} className="px-3 py-2 hover:bg-slate-50 cursor-pointer border-b border-slate-50 last:border-0">
+                                                            <div className="font-bold text-sm text-slate-800 flex items-center gap-1.5"><Building2 className="w-3.5 h-3.5 text-slate-400" /> {opt.companyName}</div>
+                                                            <div className="text-xs text-slate-500 flex items-center gap-1.5 mt-0.5 ml-5">
+                                                                <UserCircle className="w-3.5 h-3.5 text-slate-400" /> {opt.contactName} <span className="text-slate-300 mx-1">·</span> {opt.phone}
+                                                            </div>
                                                         </div>
                                                     ))}
                                                 </div>

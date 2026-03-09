@@ -18,20 +18,29 @@ def get_db():
     finally:
         db.close()
 
-# --- Pydantic Schemas ---
+class ContactInfo(BaseModel):
+    name: str
+    phone: str
+    email: str
+    notes: Optional[str] = ""
+
 class ClientCreate(BaseModel):
     company_name: str
+    representative_name: Optional[str] = None
     customer_name: str
     email: str
     phone: str
+    contacts: List[ContactInfo] = []
     is_new: bool = True
     business_registration_number: Optional[str] = None
 
 class ClientUpdate(BaseModel):
     company_name: Optional[str] = None
+    representative_name: Optional[str] = None
     customer_name: Optional[str] = None
     email: Optional[str] = None
     phone: Optional[str] = None
+    contacts: Optional[List[ContactInfo]] = None
     business_registration_number: Optional[str] = None
 
 class InquiryCreate(BaseModel):
@@ -60,7 +69,17 @@ class InquiryUpdate(BaseModel):
 # --- API Endpoints ---
 @router.post("/clients")
 def create_client(client: ClientCreate, db: Session = Depends(get_db)):
-    db_client = Client(**client.dict())
+    client_dict = client.dict()
+    # If no contacts passed but customer info exists, initialize it
+    if not client_dict.get("contacts") and client_dict.get("customer_name"):
+        client_dict["contacts"] = [{
+            "name": client_dict["customer_name"],
+            "phone": client_dict.get("phone", ""),
+            "email": client_dict.get("email", ""),
+            "notes": "기본 등록"
+        }]
+    # Re-serialize for json storage if needed, but dict list is fine for SQLAlchemy JSON column
+    db_client = Client(**client_dict)
     db.add(db_client)
     db.commit()
     db.refresh(db_client)
@@ -101,6 +120,23 @@ def read_clients(
 def create_inquiry(inquiry: InquiryCreate, db: Session = Depends(get_db)):
     db_inquiry = Inquiry(**inquiry.dict())
     db.add(db_inquiry)
+    
+    # Auto-append new contact to the client's contact list
+    if inquiry.client_id and inquiry.customer_name:
+        db_client = db.query(Client).filter(Client.id == inquiry.client_id).first()
+        if db_client:
+            existing_contacts = db_client.contacts if db_client.contacts else []
+            if not any(c.get("name") == inquiry.customer_name for c in existing_contacts):
+                updated_contacts = existing_contacts.copy()
+                updated_contacts.append({
+                    "name": inquiry.customer_name,
+                    "phone": inquiry.phone or "",
+                    "email": inquiry.email or "",
+                    "notes": "추가 문의 접수"
+                })
+                # In SQLAlchemy, setting the attribute to a new list triggers the update
+                db_client.contacts = updated_contacts
+                
     db.commit()
     db.refresh(db_inquiry)
     return db_inquiry

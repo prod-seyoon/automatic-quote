@@ -12,10 +12,12 @@ Base = declarative_base()
 class Client(Base):
     __tablename__ = "clients"
     id = Column(Integer, primary_key=True, index=True)
-    company_name = Column(String, index=True)
-    customer_name = Column(String)
+    company_name = Column(String, unique=True, index=True)
+    representative_name = Column(String, nullable=True)
+    customer_name = Column(String)  # default legacy contact
     email = Column(String)
     phone = Column(String)
+    contacts = Column(JSON, default=list)
     is_new = Column(Boolean, default=True)
     business_registration_number = Column(String, nullable=True) # For tax invoices
     business_registration_file = Column(String, nullable=True) 
