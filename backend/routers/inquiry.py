@@ -144,6 +144,9 @@ def upload_business_registration(
     except Exception as e:
         print(f"Error during OCR extraction: {e}")
         
+    if not extracted_data:
+        raise HTTPException(status_code=400, detail="OCR 파싱에 실패했습니다. Render 환경변수에 GEMINI_API_KEY가 등록되어 있는지 혹은 이미지 품질이 좋은지 확인해주세요.")
+        
     if extracted_data.get("business_registration_number"):
         db_client.business_registration_number = extracted_data["business_registration_number"]
     if extracted_data.get("company_name"):

@@ -190,9 +190,10 @@ export default function ClientList() {
             // Update Selected Client locally to show new fields without refetching immediately
             setSelectedClient(res.data.client);
             fetchClients(); // Refetch to update the list 
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
-            alert('업로드 및 파싱에 실패했습니다.');
+            const msg = error.response?.data?.detail || '업로드 및 파싱에 실패했습니다.';
+            alert(msg);
         } finally {
             setIsUploadingOCR(false);
         }
