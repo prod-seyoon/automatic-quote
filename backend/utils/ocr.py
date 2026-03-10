@@ -50,4 +50,4 @@ def extract_business_registration(file_path: str) -> Dict[str, Any]:
         
     except Exception as e:
         print(f"OCR Parsing Error: {e}")
-        return {}
+        return {"error": str(e)}
