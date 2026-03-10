@@ -67,11 +67,12 @@ export default function InquiryList({ onLinkEstimate }: InquiryListProps) {
     const [showClientDropdown, setShowClientDropdown] = useState(false);
 
     // Form State for Create/Edit
-    const initialForm = {
+    const getInitialForm = () => ({
         company_name: '',
         customer_name: '',
         email: '',
         phone: '',
+        receiver_name: '관리자',
         service_type: '3D프린팅',
         item_name: '',
         consultation_details: '',
@@ -79,8 +80,8 @@ export default function InquiryList({ onLinkEstimate }: InquiryListProps) {
         client_id: null as number | null,
         created_at: toLocalISOString(new Date().toISOString()),
         replied_at: ''
-    };
-    const [formData, setFormData] = useState(initialForm);
+    });
+    const [formData, setFormData] = useState(getInitialForm());
 
     useEffect(() => {
         fetchInquiries();
@@ -195,7 +196,7 @@ export default function InquiryList({ onLinkEstimate }: InquiryListProps) {
             });
 
             setShowCreateModal(false);
-            setFormData(initialForm);
+            setFormData(getInitialForm());
             fetchInquiries();
             alert("신규 문의가 정상적으로 등록되었습니다.");
         } catch (err) {
@@ -220,7 +221,7 @@ export default function InquiryList({ onLinkEstimate }: InquiryListProps) {
                 replied_at: formData.replied_at ? new Date(formData.replied_at).toISOString() : null
             });
             setShowEditModal(null);
-            setFormData(initialForm);
+            setFormData(getInitialForm());
             fetchInquiries();
             alert("성공적으로 수정되었습니다.");
         } catch (err) {
@@ -231,12 +232,13 @@ export default function InquiryList({ onLinkEstimate }: InquiryListProps) {
 
     const openEditModal = (inq: Inquiry) => {
         setFormData({
-            ...initialForm,
+            ...getInitialForm(),
             client_id: inq.client_id,
             company_name: inq.client_name || '',
             customer_name: inq.customer_name || '',
             email: inq.email || '',
             phone: inq.phone || '',
+            receiver_name: inq.receiver_name, // Fix: retain receiver_name
             service_type: inq.service_type,
             item_name: inq.item_name,
             consultation_details: inq.consultation_details,
@@ -273,7 +275,7 @@ export default function InquiryList({ onLinkEstimate }: InquiryListProps) {
                 <div className="flex justify-between items-center">
                     <h2 className="text-lg font-bold text-slate-800">문의 관리</h2>
                     <button
-                        onClick={() => { setFormData(initialForm); setShowCreateModal(true); }}
+                        onClick={() => { setFormData(getInitialForm()); setShowCreateModal(true); }}
                         className="flex items-center gap-2 bg-primary hover:bg-blue-700 text-white px-4 py-2 text-sm font-medium rounded-lg transition"
                     >
                         <Plus className="w-4 h-4" /> 문의 접수
@@ -364,12 +366,12 @@ export default function InquiryList({ onLinkEstimate }: InquiryListProps) {
                                     <td className="px-6 py-5 align-top">
                                         <div className="mb-3"><StatusBadge status={inq.status || '접수대기'} /></div>
                                         {inq.replied_at ? (
-                                            <div className="text-xs text-emerald-700 font-semibold flex items-center gap-1 bg-emerald-50 w-max px-2.5 py-1.5 rounded-lg border border-emerald-100">
-                                                <Reply className="w-3.5 h-3.5" />
-                                                답변: {new Date(inq.replied_at).toLocaleString('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                            <div className="text-xs text-emerald-700 font-bold bg-emerald-50 px-2.5 py-1.5 rounded-lg border border-emerald-200 shadow-sm w-max mb-2">
+                                                <div className="flex items-center gap-1.5 mb-0.5 opacity-80"><Reply className="w-3.5 h-3.5" />답변 완료 일시</div>
+                                                <div className="text-[13px]">{new Date(inq.replied_at).toLocaleString('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
                                             </div>
                                         ) : (
-                                            <div className="text-xs text-slate-400 font-medium flex items-center gap-1.5 w-max px-2 py-1">
+                                            <div className="text-xs text-slate-400 font-medium flex items-center gap-1.5 w-max px-2 py-1 bg-slate-50 rounded-lg">
                                                 <span className="w-1.5 h-1.5 rounded-full bg-slate-300"></span> 미답변 상태
                                             </div>
                                         )}

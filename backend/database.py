@@ -21,6 +21,9 @@ class Client(Base):
     is_new = Column(Boolean, default=True)
     business_registration_number = Column(String, nullable=True) # For tax invoices
     business_registration_file = Column(String, nullable=True) 
+    address = Column(String, nullable=True) # 주소
+    business_type = Column(String, nullable=True) # 업태
+    business_item = Column(String, nullable=True) # 종목
     created_at = Column(DateTime, default=datetime.utcnow)
     
     inquiries = relationship("Inquiry", back_populates="client")
