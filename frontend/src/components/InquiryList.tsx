@@ -42,9 +42,14 @@ interface InquiryListProps {
     onLinkEstimate?: (id: number) => void;
 }
 
+const parseUtcDate = (dt?: string | null) => {
+    if (!dt) return null;
+    return new Date(dt.endsWith('Z') ? dt : dt + 'Z');
+};
+
 const toLocalISOString = (dt?: string | null) => {
-    if (!dt) return '';
-    const date = new Date(dt);
+    const date = parseUtcDate(dt);
+    if (!date) return '';
     const offset = date.getTimezoneOffset() * 60000;
     return new Date(date.getTime() - offset).toISOString().slice(0, 16);
 };
@@ -192,7 +197,8 @@ export default function InquiryList({ onLinkEstimate }: InquiryListProps) {
                 receiver_name: '관리자',
                 service_type: formData.service_type,
                 item_name: formData.item_name,
-                consultation_details: formData.consultation_details
+                consultation_details: formData.consultation_details,
+                created_at: formData.created_at ? new Date(formData.created_at).toISOString() : undefined
             });
 
             setShowCreateModal(false);
@@ -347,7 +353,7 @@ export default function InquiryList({ onLinkEstimate }: InquiryListProps) {
                                         </div>
                                         <div className="text-sm text-slate-700 font-medium mb-1">{inq.customer_name} <span className="text-slate-300 mx-1">|</span> {inq.phone}</div>
                                         <div className="text-sm text-slate-500 mb-3">{inq.email}</div>
-                                        <div className="text-xs font-semibold text-slate-400 flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" /> 접수: {new Date(inq.created_at).toLocaleString('ko-KR', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
+                                        <div className="text-xs font-semibold text-slate-400 flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" /> 접수: {parseUtcDate(inq.created_at)?.toLocaleString('ko-KR', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
                                     </td>
                                     <td className="px-6 py-5 align-top">
                                         <div className="flex items-center gap-2 mb-2">
@@ -368,7 +374,7 @@ export default function InquiryList({ onLinkEstimate }: InquiryListProps) {
                                         {inq.replied_at ? (
                                             <div className="text-xs text-emerald-700 font-bold bg-emerald-50 px-2.5 py-1.5 rounded-lg border border-emerald-200 shadow-sm w-max mb-2">
                                                 <div className="flex items-center gap-1.5 mb-0.5 opacity-80"><Reply className="w-3.5 h-3.5" />답변 완료 일시</div>
-                                                <div className="text-[13px]">{new Date(inq.replied_at).toLocaleString('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
+                                                <div className="text-[13px]">{parseUtcDate(inq.replied_at)?.toLocaleString('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
                                             </div>
                                         ) : (
                                             <div className="text-xs text-slate-400 font-medium flex items-center gap-1.5 w-max px-2 py-1 bg-slate-50 rounded-lg">
@@ -451,6 +457,21 @@ export default function InquiryList({ onLinkEstimate }: InquiryListProps) {
                                         </div>
                                     </div>
                                 </div>
+
+                                {/* Status & Dates */}
+                                <div className="p-4 bg-slate-50 rounded-xl border border-slate-100 grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase">접수 일시 기입</label>
+                                        <input type="datetime-local" value={formData.created_at} onChange={e => setFormData({ ...formData, created_at: e.target.value })} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary bg-white shadow-sm" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase">진행 상태</label>
+                                        <select disabled value={formData.status} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary bg-slate-100 shadow-sm font-medium text-slate-500">
+                                            <option value="접수대기">접수대기</option>
+                                        </select>
+                                    </div>
+                                </div>
+
                                 <div className="h-px w-full bg-slate-100"></div>
                                 {/* Inquiry Info */}
                                 <div>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Search, Plus, X, Edit2, Building2, UserCircle, Briefcase, Mail, Phone, Trash2, Save } from 'lucide-react';
+import { Search, Plus, X, Edit2, Building2, UserCircle, Briefcase, Mail, Phone, Trash2, Save, UploadCloud, CheckCircle2 } from 'lucide-react';
 
 interface ContactInfo {
     name: string;
@@ -18,6 +18,10 @@ interface Client {
     phone: string;
     contacts: ContactInfo[];
     business_registration_number?: string;
+    business_registration_file?: string;
+    address?: string;
+    business_type?: string;
+    business_item?: string;
     created_at: string;
 }
 
@@ -45,6 +49,9 @@ export default function ClientList() {
     const [editingContacts, setEditingContacts] = useState<ContactInfo[]>([]);
     const [isSavingContacts, setIsSavingContacts] = useState(false);
     const [hasUnsavedContacts, setHasUnsavedContacts] = useState(false);
+
+    // OCR Upload State
+    const [isUploadingOCR, setIsUploadingOCR] = useState(false);
 
     useEffect(() => {
         fetchClients();
@@ -165,6 +172,32 @@ export default function ClientList() {
         }
     };
 
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (!e.target.files || e.target.files.length === 0 || !selectedClient) return;
+        const file = e.target.files[0];
+
+        setIsUploadingOCR(true);
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const res = await axios.post(`https://automatic-quote.onrender.com/api/v1/clients/${selectedClient.id}/upload-business-registration`, formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+
+            alert('사업자등록증 파싱 완료!');
+
+            // Update Selected Client locally to show new fields without refetching immediately
+            setSelectedClient(res.data.client);
+            fetchClients(); // Refetch to update the list 
+        } catch (error) {
+            console.error(error);
+            alert('업로드 및 파싱에 실패했습니다.');
+        } finally {
+            setIsUploadingOCR(false);
+        }
+    };
+
     return (
         <div className="flex gap-6 h-full">
             {/* Left Pane: Company List */}
@@ -257,6 +290,30 @@ export default function ClientList() {
                                     <span className="text-slate-500 font-medium mr-1">대표자</span>
                                     <span className="font-bold text-slate-800">{selectedClient.representative_name || '-'}</span>
                                 </div>
+                            </div>
+
+                            {(selectedClient.address || selectedClient.business_type || selectedClient.business_item) && (
+                                <div className="mt-4 pt-4 border-t border-slate-100/60 grid grid-cols-1 gap-2 text-sm bg-slate-50/50 p-4 rounded-xl">
+                                    {selectedClient.address && <div className="flex items-start gap-2"><span className="text-slate-500 font-medium min-w-16">사업장</span><span className="text-slate-800">{selectedClient.address}</span></div>}
+                                    <div className="flex gap-6">
+                                        {selectedClient.business_type && <div className="flex items-center gap-2"><span className="text-slate-500 font-medium min-w-16">업태</span><span className="text-slate-800">{selectedClient.business_type}</span></div>}
+                                        {selectedClient.business_item && <div className="flex items-center gap-2"><span className="text-slate-500 font-medium min-w-16">종목</span><span className="text-slate-800">{selectedClient.business_item}</span></div>}
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="mt-5 pt-5 border-t border-slate-200">
+                                <label className="flex items-center justify-center gap-2 w-full py-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded-xl border border-indigo-200 cursor-pointer transition shadow-sm relative overflow-hidden group">
+                                    <input type="file" className="hidden" accept="image/*,.pdf" onChange={handleFileUpload} disabled={isUploadingOCR} />
+                                    {isUploadingOCR ? (
+                                        <div className="flex items-center gap-2"><div className="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" /> 파싱중...</div>
+                                    ) : (
+                                        <>
+                                            {selectedClient.business_registration_file ? <CheckCircle2 className="w-4 h-4 text-indigo-600" /> : <UploadCloud className="w-4 h-4 text-indigo-600 group-hover:-translate-y-0.5 transition" />}
+                                            {selectedClient.business_registration_file ? '사업자등록증 재업로드 (OCR)' : '사업자등록증 업로드 및 파싱 (OCR)'}
+                                        </>
+                                    )}
+                                </label>
                             </div>
                         </div>
 

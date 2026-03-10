@@ -1,13 +1,15 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime
+import shutil
 
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from database import SessionLocal, Client, Inquiry, Estimate, Order
+from utils.ocr import extract_business_registration
 
 router = APIRouter()
 
@@ -53,6 +55,7 @@ class InquiryCreate(BaseModel):
     item_name: str
     consultation_details: str
     status: str = "접수대기"
+    created_at: Optional[datetime] = None
 
 class InquiryUpdate(BaseModel):
     service_type: Optional[str] = None
@@ -116,9 +119,63 @@ def read_clients(
         )
     return query.order_by(Client.created_at.desc()).offset(skip).limit(limit).all()
 
+@router.post("/clients/{client_id}/upload-business-registration")
+def upload_business_registration(
+    client_id: int, 
+    file: UploadFile = File(...), 
+    db: Session = Depends(get_db)
+):
+    db_client = db.query(Client).filter(Client.id == client_id).first()
+    if not db_client:
+        raise HTTPException(status_code=404, detail="Client not found")
+        
+    upload_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "uploads")
+    os.makedirs(upload_dir, exist_ok=True)
+    
+    file_extension = os.path.splitext(file.filename)[1] if file.filename else ""
+    save_path = os.path.join(upload_dir, f"biz_reg_{client_id}{file_extension}")
+    
+    with open(save_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+        
+    extracted_data = {}
+    try:
+        extracted_data = extract_business_registration(save_path)
+    except Exception as e:
+        print(f"Error during OCR extraction: {e}")
+        
+    if extracted_data.get("business_registration_number"):
+        db_client.business_registration_number = extracted_data["business_registration_number"]
+    if extracted_data.get("company_name"):
+        db_client.company_name = extracted_data["company_name"]
+    if extracted_data.get("representative_name"):
+        db_client.representative_name = extracted_data["representative_name"]
+    if extracted_data.get("address"):
+        db_client.address = extracted_data["address"]
+    if extracted_data.get("business_type"):
+        db_client.business_type = extracted_data["business_type"]
+    if extracted_data.get("business_item"):
+        db_client.business_item = extracted_data["business_item"]
+        
+    # Store path relative to backend root
+    db_client.business_registration_file = f"uploads/biz_reg_{client_id}{file_extension}"
+        
+    db.commit()
+    db.refresh(db_client)
+    
+    return {
+        "message": "File uploaded and processed successfully",
+        "client": db_client,
+        "extracted_data": extracted_data
+    }
+
 @router.post("/inquiries")
 def create_inquiry(inquiry: InquiryCreate, db: Session = Depends(get_db)):
-    db_inquiry = Inquiry(**inquiry.dict())
+    inquiry_data = inquiry.dict()
+    created_at_val = inquiry.created_at
+    if created_at_val is not None and created_at_val.tzinfo is not None:
+        inquiry_data['created_at'] = created_at_val.replace(tzinfo=None)
+    db_inquiry = Inquiry(**inquiry_data)
     db.add(db_inquiry)
     
     # Auto-append new contact to the client's contact list
@@ -148,6 +205,11 @@ def update_inquiry(inquiry_id: int, inquiry_update: InquiryUpdate, db: Session =
         raise HTTPException(status_code=404, detail="Inquiry not found")
     
     update_data = inquiry_update.dict(exclude_unset=True)
+    if 'created_at' in update_data and update_data['created_at'] is not None and update_data['created_at'].tzinfo is not None:
+        update_data['created_at'] = update_data['created_at'].replace(tzinfo=None)
+    if 'replied_at' in update_data and update_data['replied_at'] is not None and update_data['replied_at'].tzinfo is not None:
+        update_data['replied_at'] = update_data['replied_at'].replace(tzinfo=None)
+        
     for key, value in update_data.items():
         setattr(db_inquiry, key, value)
         
