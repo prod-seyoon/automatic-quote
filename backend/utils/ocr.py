@@ -13,8 +13,8 @@ def extract_business_registration(file_path: str) -> Dict[str, Any]:
     try:
         genai.configure(api_key=api_key)
         
-        # Use Gemini 1.5 Flash which is fast, cost-effective, and excellent at vision tasks
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        # Use Gemini 2.0 Flash which is fast, cost-effective, and excellent at vision tasks
+        model = genai.GenerativeModel('gemini-2.0-flash')
         
         # Upload the file to Gemini via File API (required for vision/PDF tasks)
         sample_file = genai.upload_file(path=file_path, display_name="business_registration")
